@@ -154,10 +154,10 @@ class Fusion_Widget_Tweets extends WP_Widget {
 		$instance['theme']               = $new_instance['theme'];
 		$instance['link_color']          = $new_instance['link_color'];
 		$instance['border_color']        = $new_instance['border_color'];
-		$instance['show_header']         = $new_instance['show_header'];
-		$instance['show_footer']         = $new_instance['show_footer'];
-		$instance['show_borders']        = $new_instance['show_borders'];
-		$instance['transparent_bg']      = $new_instance['transparent_bg'];
+		$instance['show_header']         = ! empty( $new_instance['show_header'] ) ? $new_instance['show_header'] : 'off';
+		$instance['show_footer']         = ! empty( $new_instance['show_footer'] ) ? $new_instance['show_footer'] : 'off';
+		$instance['show_borders']        = ! empty( $new_instance['show_borders'] ) ? $new_instance['show_borders'] : 'off';
+		$instance['transparent_bg']      = ! empty( $new_instance['transparent_bg'] ) ? $new_instance['transparent_bg'] : 'off';
 
 		return $instance;
 
@@ -364,8 +364,9 @@ class Fusion_Widget_Tweets extends WP_Widget {
 			<?php else : ?>
 				<a class="twitter-timeline" data-dnt="true" href="<?php echo esc_url_raw( 'https://twitter.com/' . $twitter_id ); ?>" data-widget-id="<?php echo esc_attr( $widget_id ); ?>"><?php printf( esc_attr__( 'Tweets by %s', 'Avada' ), esc_attr( $twitter_id ) ); ?></a>
 			<?php endif; ?>
-			<?php // @codingStandardsIgnoreLine ?>
+			<?php // phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
 			<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+			<?php // phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
 		</div>
 		<?php
 	}
@@ -378,6 +379,9 @@ class Fusion_Widget_Tweets extends WP_Widget {
 	 */
 	public function get_chrome( $instance ) {
 		$chrome = '';
+		if ( ! is_array( $instance ) ) {
+			$instance = array();
+		}
 
 		$instance['show_header']    = isset( $instance['show_header'] ) ? $instance['show_header'] : 1;
 		$instance['show_footer']    = isset( $instance['show_footer'] ) ? $instance['show_footer'] : 1;

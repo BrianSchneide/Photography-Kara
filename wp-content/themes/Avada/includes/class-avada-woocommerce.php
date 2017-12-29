@@ -46,8 +46,8 @@ class Avada_Woocommerce {
 		add_action( 'woocommerce_shop_loop_item_title', array( $this, 'product_title' ), 10 );
 		add_action( 'woocommerce_after_shop_loop_item_title', array( $this, 'add_product_wrappers_close' ), 20 );
 
-		add_action( 'avada_woocommerce_buttons_on_rollover',  array( $this, 'template_loop_add_to_cart' ), 10 );
-		add_action( 'avada_woocommerce_buttons_on_rollover',  array( $this, 'rollover_buttons_linebreak' ), 15 );
+		add_action( 'avada_woocommerce_buttons_on_rollover', array( $this, 'template_loop_add_to_cart' ), 10 );
+		add_action( 'avada_woocommerce_buttons_on_rollover', array( $this, 'rollover_buttons_linebreak' ), 15 );
 		add_action( 'avada_woocommerce_buttons_on_rollover', array( $this, 'show_details_button' ), 20 );
 
 		if ( 'clean' === Avada()->settings->get( 'woocommerce_product_box_design' ) ) {
@@ -73,11 +73,9 @@ class Avada_Woocommerce {
 		// Single Product Page.
 		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_title', 5 );
 		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_rating', 10 );
-		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_price', 10 );
 		add_action( 'woocommerce_single_product_summary', array( $this, 'add_product_border' ), 19 );
 		add_action( 'woocommerce_single_product_summary', array( $this, 'template_single_title' ), 5 );
-		add_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_price', 10 );
-		add_action( 'woocommerce_single_product_summary',  array( $this, 'stock_html' ), 10 );
+		add_action( 'woocommerce_single_product_summary', array( $this, 'stock_html' ), 10 );
 		add_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_rating', 11 );
 
 		// Add product-title class to the cart item name link.
@@ -303,18 +301,22 @@ class Avada_Woocommerce {
 
 				$defaults = array(
 					'quantity' => 1,
-					'class'    => implode( ' ', array_filter( array(
-						'button',
-						'product_type_' . $product_type,
-						$product->is_purchasable() && $product->is_in_stock() ? 'add_to_cart_button' : '',
-						$product->supports( 'ajax_add_to_cart' ) ? 'ajax_add_to_cart' : '',
-					) ) ),
+					'class'    => implode(
+						' ', array_filter(
+							array(
+								'button',
+								'product_type_' . $product_type,
+								$product->is_purchasable() && $product->is_in_stock() ? 'add_to_cart_button' : '',
+								$product->supports( 'ajax_add_to_cart' ) ? 'ajax_add_to_cart' : '',
+							)
+						)
+					),
 				);
 
 				$args = apply_filters( 'woocommerce_loop_add_to_cart_args', wp_parse_args( $args, $defaults ), $product );
 			}
 
-			wc_get_template( 'loop/add-to-cart.php' , $args );
+			wc_get_template( 'loop/add-to-cart.php', $args );
 		}
 	}
 
@@ -353,7 +355,7 @@ class Avada_Woocommerce {
 	 *
 	 * @access public
 	 */
-	function add_product_border() {
+	public function add_product_border() {
 		get_template_part( 'templates/wc-add-product-border' );
 	}
 
@@ -365,9 +367,9 @@ class Avada_Woocommerce {
 	 * @return array         The options, modified.
 	 */
 	public function change_pagination( $options ) {
-		$options['prev_text'] 	= '<span class="page-prev"></span><span class="page-text">' . __( 'Previous', 'Avada' ) . '</span>';
-		$options['next_text'] 	= '<span class="page-text">' . __( 'Next', 'Avada' ) . '</span><span class="page-next"></span>';
-		$options['type']		= 'plain';
+		$options['prev_text'] = '<span class="page-prev"></span><span class="page-text">' . esc_attr__( 'Previous', 'Avada' ) . '</span>';
+		$options['next_text'] = '<span class="page-text">' . esc_attr__( 'Next', 'Avada' ) . '</span><span class="page-next"></span>';
+		$options['type']      = 'plain';
 
 		return $options;
 	}
@@ -731,7 +733,7 @@ class Avada_Woocommerce {
 	 * @param string $form The HTML of the form.
 	 * @return string      Modified HTML of the form.
 	 */
-	function product_search_form( $form ) {
+	public function product_search_form( $form ) {
 		ob_start();
 		get_template_part( 'templates/wc-product-search-form' );
 		return ob_get_clean();
@@ -743,7 +745,7 @@ class Avada_Woocommerce {
 	 * @access public
 	 * @since 5.1.0
 	 */
-	function checkout_after_order_review() {
+	public function checkout_after_order_review() {
 		echo ( Avada()->settings->get( 'woocommerce_one_page_checkout' ) ) ? '</div>' : '';
 	}
 
@@ -776,14 +778,15 @@ class Avada_Woocommerce {
 	 * @return array $classes An array containing additional class 'product-list-view' if the product view is set to list.
 	 */
 	public function change_product_class( $classes ) {
+
+		if ( 'product' !== get_post_type() || is_product() ) {
+			return $classes;
+		}
+
 		if ( isset( $_SERVER['QUERY_STRING'] ) ) {
 			parse_str( sanitize_text_field( wp_unslash( $_SERVER['QUERY_STRING'] ) ), $params );
-			if ( isset( $params['product_view'] ) ) {
-				$product_view = $params['product_view'];
-				if ( 'list' == $product_view ) {
-					$classes[] = 'product-list-view';
-				}
-			}
+			$product_view = ( isset( $params['product_view'] ) ) ? $params['product_view'] : Avada()->settings->get( 'woocommerce_product_view' );
+			$classes[] = 'product-' . $product_view . '-view';
 		}
 		return $classes;
 	}
@@ -798,8 +801,8 @@ class Avada_Woocommerce {
 	 */
 	public function product_ordering( $query ) {
 
-		// We only want to affect the main query.
-		if ( ! $query->is_main_query() ) {
+		// We only want to affect the main query and no ordering on search page.
+		if ( ! $query->is_main_query() || $query->is_search() ) {
 			return;
 		}
 
@@ -811,7 +814,7 @@ class Avada_Woocommerce {
 
 		if ( wc_get_page_id( 'shop' ) === $page_id || $query->is_post_type_archive( 'product' ) || $query->is_tax( get_object_taxonomies( 'product' ) ) ) {
 
-			if ( Avada()->settings->get( 'woocommerce_avada_ordering' ) ) {
+			if ( Avada()->settings->get( 'woocommerce_avada_ordering' ) || Avada()->settings->get( 'woocommerce_toggle_grid_list' ) ) {
 				remove_action( 'woocommerce_before_shop_loop', 'woocommerce_catalog_ordering', 30 );
 				add_action( 'woocommerce_before_shop_loop', array( $this, 'catalog_ordering' ), 30 );
 
@@ -838,7 +841,7 @@ class Avada_Woocommerce {
 	 * @param array $args The arguments.
 	 * @return array
 	 */
-	function get_catalog_ordering_args( $args ) {
+	public function get_catalog_ordering_args( $args ) {
 		global $woocommerce;
 		$woo_default_catalog_orderby = get_option( 'woocommerce_default_catalog_orderby' );
 
@@ -925,7 +928,7 @@ class Avada_Woocommerce {
 			parse_str( sanitize_text_field( wp_unslash( $_SERVER['QUERY_STRING'] ) ), $params );
 		}
 
-		$order = empty( $params['product_order'] ) ? 'DESC' : strtoupper( $params['product_order'] );
+		$order = empty( $params['product_order'] ) ? 'ASC' : strtoupper( $params['product_order'] );
 		$min_max = ( 'DESC' === $order ) ? 'max' : 'min';
 		$args['join']    .= " INNER JOIN ( SELECT post_id, {$min_max}( meta_value+0 ) price FROM $wpdb->postmeta WHERE meta_key='_price' GROUP BY post_id ) as fusion_price_query ON $wpdb->posts.ID = fusion_price_query.post_id ";
 		$args['orderby'] = " fusion_price_query.price {$order} ";
@@ -1152,7 +1155,7 @@ class Avada_Woocommerce {
 	 * @since 5.1.0
 	 * @param array $args Not used here.
 	 */
-	function after_cart_table( $args ) {
+	public function after_cart_table( $args ) {
 		echo '</div>';
 	}
 
@@ -1173,7 +1176,7 @@ class Avada_Woocommerce {
 	 * @access public
 	 * @since 5.1.0
 	 */
-	function cross_sell_display() {
+	public function cross_sell_display() {
 		global $product, $woocommerce_loop, $post;
 
 		$crosssells = WC()->cart->get_cross_sells();
@@ -1228,7 +1231,7 @@ class Avada_Woocommerce {
 	public function checkout_before_customer_details( $args ) {
 		global $woocommerce;
 
-		if ( WC()->cart->needs_shipping() && ! WC()->cart->ship_to_billing_address_only() || apply_filters( 'woocommerce_enable_order_notes_field', get_option( 'woocommerce_enable_order_comments', 'yes' ) === 'yes' ) && ( ! WC()->cart->needs_shipping() || WC()->cart->ship_to_billing_address_only() ) ) {
+		if ( WC()->cart->needs_shipping() && ! wc_ship_to_billing_address_only() || apply_filters( 'woocommerce_enable_order_notes_field', get_option( 'woocommerce_enable_order_comments', 'yes' ) === 'yes' ) && ( ! WC()->cart->needs_shipping() || wc_ship_to_billing_address_only() ) ) {
 			return;
 		}
 		echo '<div class="avada-checkout-no-shipping">';
@@ -1244,7 +1247,7 @@ class Avada_Woocommerce {
 	public function checkout_after_customer_details( $args ) {
 		global $woocommerce;
 
-		if ( WC()->cart->needs_shipping() && ! WC()->cart->ship_to_billing_address_only() || apply_filters( 'woocommerce_enable_order_notes_field', get_option( 'woocommerce_enable_order_comments', 'yes' ) === 'yes' ) && ( ! WC()->cart->needs_shipping() || WC()->cart->ship_to_billing_address_only() ) ) {
+		if ( WC()->cart->needs_shipping() && ! wc_ship_to_billing_address_only() || apply_filters( 'woocommerce_enable_order_notes_field', get_option( 'woocommerce_enable_order_comments', 'yes' ) === 'yes' ) && ( ! WC()->cart->needs_shipping() || wc_ship_to_billing_address_only() ) ) {
 			echo '<div class="clearboth"></div>';
 		} else {
 			echo '<div class="clearboth"></div></div>';
@@ -1261,7 +1264,7 @@ class Avada_Woocommerce {
 		global $woocommerce;
 
 		$data_name = 'order_review';
-		if ( WC()->cart->needs_shipping() && ! WC()->cart->ship_to_billing_address_only() || apply_filters( 'woocommerce_enable_order_notes_field', get_option( 'woocommerce_enable_order_comments', 'yes' ) === 'yes' ) && ( ! WC()->cart->needs_shipping() || WC()->cart->ship_to_billing_address_only() ) ) {
+		if ( WC()->cart->needs_shipping() && ! wc_ship_to_billing_address_only() || apply_filters( 'woocommerce_enable_order_notes_field', get_option( 'woocommerce_enable_order_comments', 'yes' ) === 'yes' ) && ( ! WC()->cart->needs_shipping() || wc_ship_to_billing_address_only() ) ) {
 			$data_name = 'col-2';
 		}
 		?>
@@ -1270,7 +1273,8 @@ class Avada_Woocommerce {
 				<?php esc_attr_e( 'Continue', 'Avada' ); ?>
 			</a>
 			<div class="clearboth"></div>
-		<?php endif;
+		<?php endif; ?>
+		<?php
 	}
 
 	/**
@@ -1287,7 +1291,8 @@ class Avada_Woocommerce {
 				<?php esc_attr_e( 'Continue', 'Avada' ); ?>
 			</a>
 			<div class="clearboth"></div>
-		<?php endif;
+		<?php endif; ?>
+		<?php
 	}
 
 	/**
